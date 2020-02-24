@@ -26,7 +26,6 @@ url=""
 follow=1
 header=""
 name="default"
-loadcookiepath=""
 
 # Usage Info
 usage() {
@@ -38,7 +37,6 @@ usage() {
   -B BODY           Request Body to be send as with --data-urlencode (default: not sent)
   -I INSECURE       Sets the curl flag --insecure
   -C CONTAINS       If not contained in response body, CRITICAL will be returned
-  -O obSSO          Loads the obSSO cookie from specified path (default: off)
   -w WARNING        Warning threshold in milliseconds (default: 700)
   -c CRITICAL       Critical threshold in milliseconds (default: 2000)
   -H HEADER         Send Header (i.E. "AUTHORIZATION: Bearer 8*.UdUYwrl!nK")
@@ -103,9 +101,6 @@ while getopts "P:M:B:C:w:c:U:H:F:N:O:" opt; do
     H)
       header=$OPTARG
       ;;
-    O)
-      loadcookiepath=$OPTARG
-      ;;
     F)
       follow=1
       ;;
@@ -143,16 +138,9 @@ bodyarg=""
 if [ ! -z $body ]; then
   bodyarg=" --data-urlencode $body"
 fi
-loadcookiearg=""
-if [ ! -z $loadcookiepath ]; then
-  cookieval=$(cat $loadcookiepath)
-  loadcookiearg=" -H \"Cookie: ObSSOCookie=$cookieval\" "
-  url="https://"$url
-  proxyarg=""
-fi
 
 start=$(echo $(($(date +%s%N)/1000000)))
-body=$(eval $curl --no-keepalive -L -s $insecurearg $proxyarg $followarg $loadcookiearg $bodyarg $headerarg -X $method "$url")
+body=$(eval $curl --no-keepalive -L -s $insecurearg $proxyarg $followarg $bodyarg $headerarg -X $method "$url")
 status=$?
 
 end=$(echo $(($(date +%s%N)/1000000)))
