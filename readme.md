@@ -11,17 +11,20 @@ apt install curl
 ```
 Usage: check_curl [OPTIONS]
   [OPTIONS]:
-  -P PROXY          Set Proxy Address (default: No Proxy)
+  -U URL            Target URL
   -M METHOD         HTTP Method (default: POST)
   -N NAME           Display Name of scanned object (default: default)
-  -B BODY           Request Body to be send as with --data-urlencode (default: not sent)
+  -B BODY           Request Body to be sent (default: not sent)
+  -E ENCODEURL      Send body defined with url encoding (curl --data-urlencode) (default: off)
   -I INSECURE       Sets the curl flag --insecure
   -C CONTAINS       If not contained in response body, CRITICAL will be returned
+  -L LACKS          If contained in response body, CRITICAL will be returned (-C has priority when both are set)
   -w WARNING        Warning threshold in milliseconds (default: 700)
   -c CRITICAL       Critical threshold in milliseconds (default: 2000)
   -H HEADER         Send Header (i.E. "AUTHORIZATION: Bearer 8*.UdUYwrl!nK")
   -F FOLLOW         Follow redirects (default: OFF)
-  -U URL            Target URL
+  -D DEBUG          Only prints the curl command (default: OFF)
+  -P PROXY          Set Proxy Address (default: No Proxy)
 ```
 
 ## Command Template
