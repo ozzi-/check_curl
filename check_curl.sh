@@ -20,11 +20,14 @@ proxy=""
 method="POST"
 body=""
 contains=""
+lacks=""
 insecure=0
+debug=0
 warning=700
+encodeurl=0
 critical=2000
 url=""
-follow=1
+follow=0
 header=""
 name="default"
 
@@ -32,17 +35,20 @@ name="default"
 usage() {
   echo '''Usage: check_curl [OPTIONS]
   [OPTIONS]:
-  -P PROXY          Set Proxy Address (default: No Proxy)
+  -U URL            Target URL
   -M METHOD         HTTP Method (default: POST)
   -N NAME           Display Name of scanned object (default: default)
-  -B BODY           Request Body to be send as with --data-urlencode (default: not sent)
+  -B BODY           Request Body to be sent (default: not sent)
+  -E ENCODEURL      Send body defined with url encoding (curl --data-urlencode) (default: off)
   -I INSECURE       Sets the curl flag --insecure
   -C CONTAINS       If not contained in response body, CRITICAL will be returned
+  -L LACKS          If contained in response body, CRITICAL will be returned (-C has priority when both are set)
   -w WARNING        Warning threshold in milliseconds (default: 700)
   -c CRITICAL       Critical threshold in milliseconds (default: 2000)
   -H HEADER         Send Header (i.E. "AUTHORIZATION: Bearer 8*.UdUYwrl!nK")
   -F FOLLOW         Follow redirects (default: OFF)
-  -U URL            Target URL'''
+  -D DEBUG          Only prints the curl command (default: OFF)
+  -P PROXY          Set Proxy Address (default: No Proxy)'''
 }
 
 
@@ -70,7 +76,7 @@ getStatus() {
 
 #main
 #get options
-while getopts "P:M:B:C:w:c:U:H:F:N:O:" opt; do
+while getopts "P:M:B:C:w:c:U:H:IFN:O:EL:D" opt; do
   case $opt in
     P)
       proxy=$OPTARG
@@ -93,17 +99,26 @@ while getopts "P:M:B:C:w:c:U:H:F:N:O:" opt; do
     U)
       url=$OPTARG
       ;;
+    L)
+      lacks=$OPTARG
+      ;;
     I)
       insecure=1
       ;;
     N)
       name=$( echo $OPTARG | sed -e 's/[^A-Za-z0-9._-]/_/g' )
       ;;
+    E)
+      encodeurl=1
+      ;;
     H)
       header=$OPTARG
       ;;
     F)
       follow=1
+      ;;
+    D)
+      debug=1
       ;;
     *)
       usage
@@ -137,12 +152,21 @@ if [ $insecure -eq 1 ] ; then
 fi
 bodyarg=""
 if [ ! -z $body ]; then
-  bodyarg=" --data-urlencode $body"
+  body=$(echo $body| sed "s/\"/\\\\\"/g")
+  bodyarg=" --data \""$body"\""
+  if [ $encodeurl -eq 1 ]; then
+    bodyarg=" --data-urlencode \""$body"\""
+  fi
 fi
 
-start=$(echo $(($(date +%s%N)/1000000)))
-body=$(eval $curl --no-keepalive -L -s $insecurearg $proxyarg $followarg $bodyarg $headerarg -X $method "$url")
-status=$?
+if [ $debug -eq 1 ]; then
+  echo $curl --no-keepalive -s $insecurearg $proxyarg $followarg $bodyarg $headerarg -X $method "$url"
+  exit 0
+else
+  start=$(echo $(($(date +%s%N)/1000000)))
+  body=$(eval $curl --no-keepalive -s $insecurearg $proxyarg $followarg $bodyarg $headerarg -X $method "$url")
+  status=$?
+fi
 
 end=$(echo $(($(date +%s%N)/1000000)))
 #decide output by return code
@@ -150,6 +174,12 @@ if [ $status -eq 0 ] ; then
   if [ -n "$contains" ]; then
     if [[ ! $body == *$contains* ]]; then
       echo "CRITICAL: body does not contain '${contains}'|time=$((end - start))ms;${warning};${critical};0;"$critical"ms"
+      exit 2
+    fi
+  fi
+  if [ -n "$lacks" ]; then
+    if [[ $body == *$lacks* ]]; then
+      echo "CRITICAL: body contains '${lacks}'|time=$((end - start))ms;${warning};${critical};0;"$critical"ms"
       exit 2
     fi
   fi
@@ -164,9 +194,6 @@ else
     3)
       echo "CRITICAL: Malformed URL"
       ;;
-    22)
-      echo "CRITICAL: Server returned http code >= 400"
-      ;;
     5)
       echo "CRITICAL: Couldn't resolve proxy $proxy"
       ;;
@@ -175,6 +202,12 @@ else
       ;;
     7)
       echo "CRITICAL: Couldn't connect to proxy $proxy"
+      ;;
+    22)
+      echo "CRITICAL: Server returned http code >= 400"
+      ;;
+    52)
+      echo "CRITICAL: Server returned empty response (52)"
       ;;
     56)
       echo "CRITICAL: Failure recieving network data (56)"
