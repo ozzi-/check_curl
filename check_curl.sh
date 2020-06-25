@@ -20,6 +20,7 @@ proxy=""
 method="POST"
 body=""
 contains=""
+insecure=0
 warning=700
 critical=2000
 url=""
