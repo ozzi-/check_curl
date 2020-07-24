@@ -15,6 +15,7 @@ if [ $? -ne 0 ]; then
   exit 3
 fi
 
+
 # Default Values
 proxy=""
 method="POST"
@@ -30,6 +31,7 @@ url=""
 follow=0
 header=""
 name="default"
+cookies=0
 
 # Usage Info
 usage() {
@@ -48,7 +50,8 @@ usage() {
   -H HEADER         Send Header (i.E. "AUTHORIZATION: Bearer 8*.UdUYwrl!nK")
   -F FOLLOW         Follow redirects (default: OFF)
   -D DEBUG          Only prints the curl command (default: OFF)
-  -P PROXY          Set Proxy Address (default: No Proxy)'''
+  -P PROXY          Set Proxy Address (default: No Proxy)
+  -K COOKIES        Enables/Disabled cookie handling in a temporary cookie jar'''
 }
 
 
@@ -76,8 +79,11 @@ getStatus() {
 
 #main
 #get options
-while getopts "P:M:B:C:w:c:U:H:IFN:O:EL:D" opt; do
+while getopts "P:M:B:C:w:c:U:H:IFN:O:EL:D:K" opt; do
   case $opt in
+    K)
+      cookies=1
+      ;;
     P)
       proxy=$OPTARG
       ;;
@@ -150,6 +156,11 @@ insecurearg=""
 if [ $insecure -eq 1 ] ; then
   insecurearg=" --insecure "
 fi
+cookiesarg=""
+if [ $cookies -eq 1 ] ; then
+  COOKIE_JAR_TEMP_PATH=$(mktemp /tmp/check_curl_cookiejar.XXXXXX)
+  cookiesarg=" -c ${COOKIE_JAR_TEMP_PATH} -b ${COOKIE_JAR_TEMP_PATH}"
+fi
 bodyarg=""
 if [ ! -z $body ]; then
   body=$(echo $body| sed "s/\"/\\\\\"/g")
@@ -160,7 +171,7 @@ if [ ! -z $body ]; then
 fi
 
 if [ $debug -eq 1 ]; then
-  echo $curl --no-keepalive -s $insecurearg $proxyarg $followarg $bodyarg $headerarg -X $method "$url"
+  echo $curl --no-keepalive -s $insecurearg $proxyarg $followarg $bodyarg $headerarg -X $method $cookiesarg "$url"
   exit 0
 else
   start=$(echo $(($(date +%s%N)/1000000)))

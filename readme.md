@@ -25,6 +25,7 @@ Usage: check_curl [OPTIONS]
   -F FOLLOW         Follow redirects (default: OFF)
   -D DEBUG          Only prints the curl command (default: OFF)
   -P PROXY          Set Proxy Address (default: No Proxy)
+  -K COOKIES        Enables/Disabled cookie handling in a temporary cookie jar
 ```
 
 ## Command Template
