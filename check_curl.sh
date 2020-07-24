@@ -15,7 +15,6 @@ if [ $? -ne 0 ]; then
   exit 3
 fi
 
-COOKIE_JAR_TEMP_PATH=$(mktemp /tmp/check_curl_cookiejar.XXXXXX)
 
 # Default Values
 proxy=""
@@ -159,6 +158,7 @@ if [ $insecure -eq 1 ] ; then
 fi
 cookiesarg=""
 if [ $cookies -eq 1 ] ; then
+  COOKIE_JAR_TEMP_PATH=$(mktemp /tmp/check_curl_cookiejar.XXXXXX)
   cookiesarg=" -c ${COOKIE_JAR_TEMP_PATH} -b ${COOKIE_JAR_TEMP_PATH}"
 fi
 bodyarg=""
