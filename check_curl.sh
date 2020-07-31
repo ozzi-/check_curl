@@ -175,8 +175,12 @@ if [ $debug -eq 1 ]; then
   exit 0
 else
   start=$(echo $(($(date +%s%N)/1000000)))
-  body=$(eval $curl --no-keepalive -s $insecurearg $proxyarg $followarg $bodyarg $headerarg -X $method "$url")
+  body=$(eval $curl --no-keepalive -s $insecurearg $proxyarg $followarg $bodyarg $headerarg -X $method $cookiesarg "$url")
   status=$?
+fi
+
+if [ $cookies -eq 1 ] ; then
+  rm -f ${COOKIE_JAR_TEMP_PATH}
 fi
 
 end=$(echo $(($(date +%s%N)/1000000)))
